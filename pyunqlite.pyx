@@ -10,6 +10,7 @@ from libc.stdlib cimport malloc, free
 cdef extern from 'unqlite.h':
     # types (http://unqlite.org/c_api_object.html)
     cdef struct unqlite
+    cdef struct unqlite_kv_cursor
 
     ctypedef signed long long int sxi64
     ctypedef unsigned long long int sxu64
@@ -20,6 +21,11 @@ cdef extern from 'unqlite.h':
     cdef int unqlite_open(unqlite **ppDb, const char *zFilename, unsigned int iMode)
     cdef int unqlite_config(unqlite *pDb, int nOp, ...)
     cdef int unqlite_close(unqlite *pDb)
+
+    #transaction
+    cdef int unqlite_begin(unqlite *pDb)
+    cdef int unqlite_commit(unqlite *pDb)
+    cdef int unqlite_rollback(unqlite *pDb)
 
     ## key/value store interfaces
     cdef int unqlite_kv_store(unqlite *pDb, const void *pKey, int nKeyLen, const void *pData, unqlite_int64 nDataLen)
@@ -32,6 +38,23 @@ cdef extern from 'unqlite.h':
         int (*xConsumer)(const void *pData, unsigned int iDataLen, void *pUserData), void *pUserData)
     cdef int unqlite_kv_delete(unqlite *pDb, const void *pKey, int nKeyLen)
     cdef int unqlite_kv_config(unqlite *pDb, int iOp, ...)
+
+    # iterator
+    cdef int unqlite_kv_cursor_init(unqlite *pDb,unqlite_kv_cursor **ppOut)
+    cdef int unqlite_kv_cursor_release(unqlite *pDb,unqlite_kv_cursor *pCur)
+    cdef int unqlite_kv_cursor_seek(unqlite_kv_cursor *pCursor,const void *pKey,int nKeyLen,int iPos)
+
+    cdef int unqlite_kv_cursor_first_entry(unqlite_kv_cursor *pCursor)
+    cdef int unqlite_kv_cursor_last_entry(unqlite_kv_cursor *pCursor)
+    cdef int unqlite_kv_cursor_valid_entry(unqlite_kv_cursor *pCursor)
+    cdef int unqlite_kv_cursor_next_entry(unqlite_kv_cursor *pCursor)
+    cdef int unqlite_kv_cursor_prev_entry(unqlite_kv_cursor *pCursor)
+    cdef int unqlite_kv_cursor_key(unqlite_kv_cursor *pCursor,void *pBuf,int *pnByte)
+    cdef int unqlite_kv_cursor_key_callback(unqlite_kv_cursor *pCursor,int (*xConsumer)(const void *,unsigned int,void *),void *pUserData)
+    cdef int unqlite_kv_cursor_data(unqlite_kv_cursor *pCursor,void *pBuf,unqlite_int64 *pnData)
+    cdef int unqlite_kv_cursor_data_callback(unqlite_kv_cursor *pCursor,int (*xConsumer)(const void *,unsigned int,void *),void *pUserData)
+    cdef int unqlite_kv_cursor_delete_entry(unqlite_kv_cursor *pCursor)
+    cdef int unqlite_kv_cursor_reset(unqlite_kv_cursor *pCursor)
 
     # constant values (http://unqlite.org/c_api_const.html)
     ## Standard return values from Symisc public interfaces
@@ -120,9 +143,10 @@ cdef extern from 'unqlite.h':
 ###
 ### Wrapper
 ###
-
 cdef class UnQLite(object):
     cdef unqlite *p_db
+    cdef unqlite_kv_cursor *p_cur
+    cdef int is_memory
 
     def __cinit__(self):
         """
@@ -130,8 +154,10 @@ cdef class UnQLite(object):
         """
 
         self.p_db = <unqlite *>0
+        self.p_cur = <unqlite_kv_cursor *>0
+        self.is_memory = 0
 
-    def __deallocate__(self):
+    def __dealloc__(self):
         """
         Invoked whent the instance is deallocating.
         """
@@ -150,6 +176,14 @@ cdef class UnQLite(object):
         if ret != UNQLITE_OK:
             raise self._build_exception_for_error(ret)
 
+        if file_name == ':mem:':
+            self.is_memory = 1
+            return
+
+        ret = unqlite_config(self.p_db, UNQLITE_CONFIG_DISABLE_AUTO_COMMIT)
+        if ret != UNQLITE_OK:
+            raise NotImplementedError
+
     def config(self, operation, *args):
         """
         Configures the database handle.
@@ -165,6 +199,15 @@ cdef class UnQLite(object):
         cdef int ret
 
         if self.p_db != <unqlite *>0:
+            if self.p_cur != <unqlite_kv_cursor *>0:
+                unqlite_kv_cursor_release(self.p_db, self.p_cur)
+                self.p_cur = <unqlite_kv_cursor *>0
+
+            #because we clear UNQLITE_CONFIG_DISABLE_AUTO_COMMIT
+            #unqlite_close will call unqlite_rollback automatic.
+            #if I call rollback() in python there are not journal leave.
+            #but if I call from pyx, this file leave...
+            #so may be this function not call from __deallocate__!
             ret = unqlite_close(self.p_db)
 
             if ret != UNQLITE_OK:
@@ -258,3 +301,117 @@ cdef class UnQLite(object):
 
         finally:
             free(buf)
+
+    def begin(self):
+        cdef int ret
+
+        if self.is_memory:
+            return
+
+        ret = unqlite_begin(self.p_db)
+        if ret != UNQLITE_OK:
+            raise self._build_exception_for_error(ret)
+
+    def commit(self):
+        cdef int ret
+
+        if self.is_memory:
+            return
+
+        unqlite_commit(self.p_db)
+
+        ret = unqlite_begin(self.p_db)
+        if ret != UNQLITE_OK:
+            raise self._build_exception_for_error(ret)
+
+    def rollback(self):
+        cdef int ret
+
+        if self.is_memory:
+            return
+
+        unqlite_rollback(self.p_db)
+
+        ret = unqlite_begin(self.p_db)
+        if ret != UNQLITE_OK:
+            raise self._build_exception_for_error(ret)
+
+    def __getitem__(self, key):
+        return self.fetch(key)
+
+    def __setitem__(self, key, value):
+        self.store(key, value)
+
+    def __delitem__(self, key):
+        self.delete(key)
+
+    def __contains__(self, key):
+        cdef char *buf = <char *>0
+        cdef unqlite_int64 buf_size = 0
+        cdef int ret
+
+        ret = unqlite_kv_fetch(self.p_db, <char *>key, len(key), <void *>0, &buf_size)
+        if ret == UNQLITE_NOTFOUND:
+            return False
+        elif ret == UNQLITE_OK:
+            return True
+
+        raise self._build_exception_for_error(ret)
+
+    def __iter__(self):
+        cdef int ret
+
+        #release cursor if need
+        if self.p_cur != <unqlite_kv_cursor *>0:
+            unqlite_kv_cursor_release(self.p_db, self.p_cur)
+            self.p_cur = <unqlite_kv_cursor *>0
+
+        ret = unqlite_kv_cursor_init(self.p_db, &self.p_cur)
+        if ret != UNQLITE_OK:
+            raise self._build_exception_for_error(ret)
+
+        ret = unqlite_kv_cursor_last_entry(self.p_cur)
+
+        return self
+
+    def __next__(self):
+        cdef char *buf = <char *>0
+        cdef int buf_size = 0
+        cdef int ret
+
+        ret = unqlite_kv_cursor_valid_entry(self.p_cur)
+        if ret == 0:
+            unqlite_kv_cursor_release(self.p_db, self.p_cur)
+            self.p_cur = <unqlite_kv_cursor *>0
+            raise StopIteration()
+
+        #get key size
+        ret = unqlite_kv_cursor_key(self.p_cur, <void *>0, &buf_size)
+        if ret != UNQLITE_OK:
+            raise self._build_exception_for_error(ret)
+        
+        #get key value
+        try:
+            buf = <char *>malloc(buf_size)
+            ret = unqlite_kv_cursor_key(self.p_cur, <void *>buf, &buf_size)
+
+            if ret != UNQLITE_OK:
+                raise self._build_exception_for_error(ret)
+
+            #when it is last element, unqlite_kv_cursor_prev_entry return not
+            #UNQLITE_OK, but we use unqlite_kv_cursor_valid_entry to check.
+            unqlite_kv_cursor_prev_entry(self.p_cur)
+
+            return buf[:buf_size]
+
+        finally:
+            free(buf)
+
+def connect(fn = None):
+    db = UnQLite()
+    if not fn:
+        db.open(':mem:')
+    else:
+        db.open(fn)
+    return db
+

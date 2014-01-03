@@ -16,3 +16,8 @@
 *.exe
 *.out
 *.app
+
+build
+dist
+pyunqlite.c
+test.unqlite

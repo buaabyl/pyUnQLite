@@ -16,20 +16,64 @@ py-unqlite
 Unofficial python bindings for [UnQLite](http://unqlite.org/), an embeddable NoSQL database engine.
 
 
-Example
+Example 1 (original use)
 -------
 
-    import pyunqlite
+```python
+import pyunqlite
 
-    db = pyunqlite.UnQLite()
-    db.open('/tmp/test.db')
+db = pyunqlite.UnQLite()
+db.open('/tmp/test.db')
 
-    db.store('foo', 'bar')
-    print db.fetch('foo')  # => 'bar'
+db.store('foo', 'bar')
+print db.fetch('foo')  # => 'bar'
 
-    db.delete('foo')
+db.delete('foo')
 
-    db.close()
+db.close()
+```
+
+Example 2 (dict like use)
+-------
+
+```python
+import pyunqlite
+
+#sqlite3 like
+db = pyunqlite.connect('test.unqlite')
+
+#dict like set and delete
+db['exist'] = 'hello world'
+db['notexist'] = '1'
+db.commit()
+
+del db['notexist']
+print 'check "exist" in db:', 'exist' in db
+print 'check "notexist" in db:', 'notexist' in db
+
+#dict like iter
+print 'ITER:'
+for k in db:
+    print k, ':', db[k]
+
+db.rollback()
+
+#dict like iter
+print 'ITER:'
+for k in db:
+    print k, ':', db[k]
+
+```
+
+will print out 
+
+    check "exist" in db: True
+    check "notexist" in db: False
+    ITER:
+    exist : hello world
+    ITER:
+    notexist : 1
+    exist : hello world
 
 
 Installation

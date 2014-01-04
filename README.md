@@ -1,20 +1,25 @@
 pyUnQLite
 =========
 
-Modify cython binding of pyunqlite more like python sqlite interface and dict interface
+A UnQLite NoSQL DB for python. Using cython for adapter.
 
+An this is unofficial python bindings for [UnQLite](http://unqlite.org/), an embeddable NoSQL database engine.
 
-I copy from (https://bitbucket.org/east301/py-unqlite)
+I don't like official python bindings, so decided to use new way.
 
-version 1f1e3ab-2013.07.06
+This bindings support python buildin 'dict' interface, such as
 
-Follow is original project doc.
-
-py-unqlite
-==========
-
-Unofficial python bindings for [UnQLite](http://unqlite.org/), an embeddable NoSQL database engine.
-
+```python
+db['key'] = value
+if 'key' in db:
+    print '"key" exist'
+for k in db:
+    v = db[k]
+    print k, v
+    
+if 'key' in db:
+    del db['key']
+````
 
 Example 1 (original use)
 -------
@@ -65,7 +70,7 @@ for k in db:
 
 ```
 
-will print out 
+which will print out 
 
     check "exist" in db: True
     check "notexist" in db: False
@@ -79,16 +84,21 @@ will print out
 Installation
 ------------
 
+    $ # pip
     $ pip install cython
+    $ # or setuptools
+    $ easy_install -Z cython
+    $
     $ cd path/to/pyunqlite/source/code/directory
     $ python setup.py build
     $ python setup.py install
+    $
 
 
 Files
 -----
 
-* __example.py__: usage example of py-unqlite
+* __example.py__: original usage example of py-unqlite
 * __pyunqlite.pyx__: UnQLite python wrapper written in [Cython](http://cython.org/)
 * __unqlite.c__, __unqlite.h__: [UnQLite 1.1.6 source code](http://unqlite.org/downloads.html)
 
@@ -123,3 +133,6 @@ Credits
      * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
      * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      */
+     
+I copy the original version from https://bitbucket.org/east301/py-unqlite, version 1f1e3ab-2013.07.06
+the creator not update it, so I decided to maintain.

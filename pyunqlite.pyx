@@ -56,6 +56,11 @@ cdef extern from 'unqlite.h':
     cdef int unqlite_kv_cursor_delete_entry(unqlite_kv_cursor *pCursor)
     cdef int unqlite_kv_cursor_reset(unqlite_kv_cursor *pCursor)
 
+    cdef const char * unqlite_lib_version()
+    cdef const char * unqlite_lib_signature()
+    cdef const char * unqlite_lib_ident()
+    cdef const char * unqlite_lib_copyright()
+
     # constant values (http://unqlite.org/c_api_const.html)
     ## Standard return values from Symisc public interfaces
     cdef int SXRET_OK = 0
@@ -414,4 +419,17 @@ def connect(fn = None):
     else:
         db.open(fn)
     return db
+
+def version():
+    return unqlite_lib_version()
+
+def signature():
+    return unqlite_lib_signature()
+
+def ident():
+    return unqlite_lib_ident()
+
+def copyright():
+    return unqlite_lib_copyright()
+
 

@@ -22,6 +22,12 @@ import pyunqlite
 import random
 import gc
 
+print dir(pyunqlite)
+
+print pyunqlite.version()
+print pyunqlite.ident()
+print pyunqlite.signature()
+
 #Transaction:
 # only file-based database have transaction
 # memory-based just return.

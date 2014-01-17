@@ -220,10 +220,21 @@ cdef class UnQLite(object):
 
             self.p_db = <unqlite *>0
 
+    def append(self, key, data):
+        '''
+        Append data to record, if not exist will create a new record!
+        '''
+
+        cdef int ret = unqlite_kv_append(self.p_db,
+                <const char *>key, len(key), <const char*>data, len(data))
+
+        if ret != 0:
+            raise self._build_exception_for_error(ret)
+
     def store(self, key, data):
-        """
+        '''
         Stores records in the databse.
-        """
+        '''
 
         cdef int ret = unqlite_kv_store(
             self.p_db, <const char *>key, len(key), <const char *>data, len(data))
@@ -232,43 +243,48 @@ cdef class UnQLite(object):
             raise self._build_exception_for_error(ret)
 
     def fetch(self, key):
-        """
+        '''
         Fetches a record from the database.
-        """
+        '''
 
         cdef char *buf = <char *>0
         cdef unqlite_int64 buf_size = 0
         cdef int ret
 
-        ret = unqlite_kv_fetch(self.p_db, <char *>key, len(key), <void *>0, &buf_size)
+        ret = unqlite_kv_fetch(self.p_db,
+                <char *>key, len(key), <void *>0, &buf_size)
         if ret != UNQLITE_OK:
             raise self._build_exception_for_error(ret)
 
         try:
             buf = <char *>malloc(buf_size)
 
-            ret = unqlite_kv_fetch(self.p_db, <char *>key, len(key), <void *>buf, &buf_size)
+            ret = unqlite_kv_fetch(self.p_db,
+                    <char *>key, len(key), <void *>buf, &buf_size)
             if ret != UNQLITE_OK:
                 raise self._build_exception_for_error(ret)
 
+            #will translate to:
+            #   __Pyx_PyBytes_FromStringAndSize(buf, buf_size);
+            #so make sure implicit declare buf_size, do not just return buf!
             return buf[:buf_size]
 
         finally:
             free(buf)
 
     def delete(self, key):
-        """
+        '''
         Removes a record from the database.
-        """
+        '''
 
         cdef int ret = unqlite_kv_delete(self.p_db, <char *>key, len(key))
         if ret != UNQLITE_OK:
             raise self._build_exception_for_error(ret)
 
     def _build_exception_for_error(self, status):
-        """
+        '''
         Builds an exception for an error.
-        """
+        '''
 
         exc_map = {
             UNQLITE_NOMEM: MemoryError,
@@ -290,9 +306,9 @@ cdef class UnQLite(object):
         return exc_klass(message)
 
     def _get_last_error(self):
-        """
+        '''
         Gets last error message.
-        """
+        '''
 
         cdef int ret
         cdef int size
@@ -307,6 +323,7 @@ cdef class UnQLite(object):
         finally:
             free(buf)
 
+    #transaction interface-----------------------------begin
     def begin(self):
         cdef int ret
 
@@ -340,7 +357,9 @@ cdef class UnQLite(object):
         ret = unqlite_begin(self.p_db)
         if ret != UNQLITE_OK:
             raise self._build_exception_for_error(ret)
+    #transaction interface-------------------------------end
 
+    #dict-like interface-------------------------------begin
     def __getitem__(self, key):
         return self.fetch(key)
 
@@ -355,7 +374,8 @@ cdef class UnQLite(object):
         cdef unqlite_int64 buf_size = 0
         cdef int ret
 
-        ret = unqlite_kv_fetch(self.p_db, <char *>key, len(key), <void *>0, &buf_size)
+        ret = unqlite_kv_fetch(self.p_db,
+                <char *>key, len(key), <void *>0, &buf_size)
         if ret == UNQLITE_NOTFOUND:
             return False
         elif ret == UNQLITE_OK:
@@ -411,6 +431,7 @@ cdef class UnQLite(object):
 
         finally:
             free(buf)
+    #dict-like interface--------------------------------end
 
 def connect(fn = None):
     db = UnQLite()

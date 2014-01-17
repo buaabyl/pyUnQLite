@@ -8,7 +8,7 @@ from libc.stdlib cimport malloc, free
 ###
 
 cdef extern from 'unqlite.h':
-    # types (http://unqlite.org/c_api_object.html)
+    #types (http://unqlite.org/c_api_object.html)-----------
     cdef struct unqlite
     cdef struct unqlite_kv_cursor
 
@@ -16,8 +16,12 @@ cdef extern from 'unqlite.h':
     ctypedef unsigned long long int sxu64
     ctypedef sxi64 unqlite_int64
 
-    # functions
-    ## database engine handle
+    ## functions -------------------------------------------
+    #private interface(need modify unqite.c!)
+    #cdef jx9_int64 unqliteCollectionTotalRecords(unqlite_col *pCol)
+
+
+    #database engine handle
     cdef int unqlite_open(unqlite **ppDb, const char *zFilename, unsigned int iMode)
     cdef int unqlite_config(unqlite *pDb, int nOp, ...)
     cdef int unqlite_close(unqlite *pDb)
@@ -27,7 +31,7 @@ cdef extern from 'unqlite.h':
     cdef int unqlite_commit(unqlite *pDb)
     cdef int unqlite_rollback(unqlite *pDb)
 
-    ## key/value store interfaces
+    #key/value store interfaces
     cdef int unqlite_kv_store(unqlite *pDb, const void *pKey, int nKeyLen, const void *pData, unqlite_int64 nDataLen)
     cdef int unqlite_kv_store_fmt(unqlite *pDb, const void *pKey, int nKeyLen, const char *zFormat, ...)
     cdef int unqlite_kv_append(unqlite *pDb, const void *pKey, int nKeyLen, const void *pData, unqlite_int64 nDataLen)
@@ -39,7 +43,7 @@ cdef extern from 'unqlite.h':
     cdef int unqlite_kv_delete(unqlite *pDb, const void *pKey, int nKeyLen)
     cdef int unqlite_kv_config(unqlite *pDb, int iOp, ...)
 
-    # iterator
+    #iterator
     cdef int unqlite_kv_cursor_init(unqlite *pDb,unqlite_kv_cursor **ppOut)
     cdef int unqlite_kv_cursor_release(unqlite *pDb,unqlite_kv_cursor *pCur)
     cdef int unqlite_kv_cursor_seek(unqlite_kv_cursor *pCursor,const void *pKey,int nKeyLen,int iPos)
@@ -61,8 +65,8 @@ cdef extern from 'unqlite.h':
     cdef const char * unqlite_lib_ident()
     cdef const char * unqlite_lib_copyright()
 
-    # constant values (http://unqlite.org/c_api_const.html)
-    ## Standard return values from Symisc public interfaces
+    #constant values (http://unqlite.org/c_api_const.html)
+    #standard return values from Symisc public interfaces
     cdef int SXRET_OK = 0
     cdef int SXERR_MEM = -1
     cdef int SXERR_IO = -2
@@ -99,7 +103,7 @@ cdef extern from 'unqlite.h':
     cdef int SXERR_RETRY = -33
     cdef int SXERR_IGNORE = -63
 
-    ## Standard UnQLite return values and error codes
+    #standard UnQLite return values and error codes
     cdef int UNQLITE_OK = SXRET_OK
     cdef int UNQLITE_NOMEM = SXERR_MEM
     cdef int UNQLITE_ABORT = SXERR_ABORT
@@ -125,7 +129,7 @@ cdef extern from 'unqlite.h':
     cdef int UNQLITE_READ_ONLY = -75
     cdef int UNQLITE_LOCKERR = -76
 
-    ## database config commands
+    #database config commands
     cdef int UNQLITE_CONFIG_JX9_ERR_LOG = 1
     cdef int UNQLITE_CONFIG_MAX_PAGE_CACHE = 2
     cdef int UNQLITE_CONFIG_ERR_LOG = 3
@@ -133,7 +137,7 @@ cdef extern from 'unqlite.h':
     cdef int UNQLITE_CONFIG_DISABLE_AUTO_COMMIT = 5
     cdef int UNQLITE_CONFIG_GET_KV_NAME = 6
 
-    ## open mode flags
+    #open mode flags
     cdef int UNQLITE_OPEN_READONLY = 0x00000001
     cdef int UNQLITE_OPEN_READWRITE = 0x00000002
     cdef int UNQLITE_OPEN_CREATE = 0x00000004
@@ -382,6 +386,9 @@ cdef class UnQLite(object):
             return True
 
         raise self._build_exception_for_error(ret)
+
+    def __len__(self):
+        raise NotImplementedError
 
     def __iter__(self):
         cdef int ret

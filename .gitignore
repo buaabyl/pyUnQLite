@@ -21,3 +21,4 @@ build
 dist
 pyunqlite.c
 test.unqlite
+tags

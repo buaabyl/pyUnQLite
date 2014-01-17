@@ -198,6 +198,9 @@ class TestDictInterface(unittest.TestCase):
             self.assertTrue(k in map_expect)
             self.assertEqual(map_expect[k], self.db[k])
 
+    def testLen(self):
+        len(self.db)
+
 if __name__ == '__main__':
     print 'version  :', pyunqlite.version()
     print 'ident    :', pyunqlite.ident()

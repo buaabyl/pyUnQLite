@@ -46464,7 +46464,7 @@ static int vm_builtin_get_resource_type(jx9_context *pCtx, int nArg, jx9_value *
 }
 /*
  * void dump(expression, ....)
- *   dump — Dumps information about a variable
+ *   dump 97 Dumps information about a variable
  * Parameters
  *   One or more expression to dump.
  * Returns
@@ -47121,9 +47121,9 @@ static sxi32 VmExecIncludedFile(
  *  and the current working directory before failing. The include()
  *  construct will emit a warning if it cannot find a file; this is different
  *  behavior from require(), which will emit a fatal error.
- *  If a path is defined — whether absolute (starting with a drive letter
+ *  If a path is defined 97 whether absolute (starting with a drive letter
  *  or \ on Windows, or / on Unix/Linux systems) or relative to the current
- *  directory (starting with . or ..) — the include_path will be ignored altogether.
+ *  directory (starting with . or ..) 97 the include_path will be ignored altogether.
  *  For example, if a filename begins with ../, the parser will look in the parent
  *  directory to find the requested file.
  *  When a file is included, the code it contains inherits the variable scope

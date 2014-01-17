@@ -1,6 +1,12 @@
 pyUnQLite
 =========
 
+TIPS
+-------
+If you don't like amalgamation style, I wrote a script to extract source code from unqlite.c: https://github.com/buaabyl/pyUnQLite/tree/master/unpack-unqlite
+
+Introduction
+-------
 A UnQLite NoSQL DB for python. Using cython for adapter.
 
 An this is unofficial python bindings for [UnQLite](http://unqlite.org/), an embeddable NoSQL database engine.

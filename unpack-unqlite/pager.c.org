@@ -1484,11 +1484,7 @@ static int pager_shared_lock(Pager *pPager)
 			}
 			if(pPager->dbSize > 0 ){
 				if( pPager->iOpenFlags & UNQLITE_OPEN_MMAP ){
-#ifdef DISABLE_JX9
-					const jx9_vfs *pVfs = 0;
-#else
 					const jx9_vfs *pVfs = jx9ExportBuiltinVfs();
-#endif
 					/* Obtain a read-only memory view of the whole file */
 					if( pVfs && pVfs->xMmap ){
 						int vr;
@@ -2555,11 +2551,7 @@ UNQLITE_PRIVATE int unqlitePagerClose(Pager *pPager)
 	/* Release the KV engine */
 	pager_release_kv_engine(pPager);
 	if( pPager->iOpenFlags & UNQLITE_OPEN_MMAP ){
-#ifdef DISABLE_JX9
-		const jx9_vfs *pVfs = 0;
-#else
 		const jx9_vfs *pVfs = jx9ExportBuiltinVfs();
-#endif
 		if( pVfs && pVfs->xUnmap && pPager->pMmap ){
 			pVfs->xUnmap(pPager->pMmap,pPager->dbByteSize);
 		}

@@ -385,7 +385,6 @@ static int unqliteDbRelease(unqlite *pDb)
 	}
 	/* Close the pager */
 	unqlitePagerClose(pStore->pPager);
-#ifndef DISABLE_JX9
 	/* Release any active VM's */
 	pVm = pDb->pVms;
 	for(;;){
@@ -400,7 +399,6 @@ static int unqliteDbRelease(unqlite *pDb)
 	}
 	/* Release the Jx9 handle */
 	jx9_release(pStore->pJx9);
-#endif
 	/* Set a dummy magic number */
 	pDb->nMagic = 0x7250;
 	/* Release the whole memory subsystem */
@@ -448,9 +446,7 @@ static void unqliteCoreShutdown(void)
 	}
 	sUnqlMPGlobal.nMagic = 0x1764;
 	/* Finally, shutdown the Jx9 library */
-#ifndef DISABLE_JX9
 	jx9_lib_shutdown();
-#endif
 }
 /*
  * [CAPIREF: unqlite_lib_init()]
@@ -587,17 +583,12 @@ static int unqliteInitDatabase(
 		return rc;
 	}
 	/* Allocate a new Jx9 engine handle */
-#ifndef DISABLE_JX9
 	rc = jx9_init(&pStorage->pJx9);
 	if( rc != JX9_OK ){
 		return rc;
 	}
-#else
-    pStorage->pJx9 = 0;
-#endif
 	return UNQLITE_OK;
 }
-#ifndef DISABLE_JX9
 /*
  * Allocate and initialize a new UnQLite Virtual Mahcine and attach it
  * to the compiled Jx9 script.
@@ -639,9 +630,7 @@ static int unqliteInitVm(unqlite *pDb,jx9_vm *pJx9Vm,unqlite_vm **ppOut)
 	MACRO_LD_PUSH(pDb->pVms,pVm);
 	pDb->iVm++;
 	/* Register Jx9 functions */
-#ifndef DISABLE_JX9
 	unqliteRegisterJx9Functions(pVm);
-#endif
 	/* Set the magic number */
 	pVm->nMagic = JX9_VM_INIT; /* Same magic number as Jx9 */
 	/* All done */
@@ -658,9 +647,7 @@ fail:
 static int unqliteVmRelease(unqlite_vm *pVm)
 {
 	/* Release the Jx9 VM */
-#ifndef DISABLE_JX9
 	jx9_vm_release(pVm->pJx9Vm);
-#endif
 	/* Release the private memory backend */
 	SyMemBackendRelease(&pVm->sAlloc);
 	/* Upper layer will discard this VM from the list
@@ -668,7 +655,6 @@ static int unqliteVmRelease(unqlite_vm *pVm)
 	 */
 	return UNQLITE_OK;
 }
-#endif
 /*
  * Return the default page size.
  */
@@ -724,9 +710,7 @@ static int unqliteConfigure(unqlite *pDb,int nOp,va_list ap)
 	switch(nOp){
 	case UNQLITE_CONFIG_JX9_ERR_LOG:
 		/* Jx9 compile-time error log */
-#ifndef DISABLE_JX9
 		rc = jx9EngineConfig(pDb->sDB.pJx9,JX9_CONFIG_ERR_LOG,ap);
-#endif
 		break;
 	case UNQLITE_CONFIG_MAX_PAGE_CACHE: {
 		int max_page = va_arg(ap,int);
@@ -920,7 +904,6 @@ int unqlite_close(unqlite *pDb)
 	SyMemBackendPoolFree(&sUnqlMPGlobal.sAllocator,pDb);
 	return rc;
 }
-#ifndef DISABLE_JX9
 /*
  * [CAPIREF: unqlite_compile()]
  * Please refer to the official documentation for function purpose and expected parameters.
@@ -1905,7 +1888,6 @@ void unqlite_context_free_chunk(unqlite_context *pCtx,void *pChunk)
 {
 	jx9_context_free_chunk(pCtx,pChunk);
 }
-#endif
 /*
  * [CAPIREF: unqlite_kv_store()]
  * Please refer to the official documentation for function purpose and expected parameters.
@@ -2703,7 +2685,6 @@ int unqlite_rollback(unqlite *pDb)
 #endif
 	 return rc;
 }
-#ifndef DISABLE_JX9
 /*
  * [CAPIREF: unqlite_util_load_mmaped_file()]
  * Please refer to the official documentation for function purpose and expected parameters.
@@ -2806,4 +2787,3 @@ UNQLITE_APIEXPORT unsigned int unqlite_util_random_num(unqlite *pDb)
 #endif
 	 return iNum;
 }
-#endif

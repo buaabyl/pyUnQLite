@@ -2751,6 +2751,7 @@ UNQLITE_APIEXPORT int unqlite_util_release_mmaped_file(void *pMap,unqlite_int64 
 	 }
 	return rc;
 }
+#endif
 /*
  * [CAPIREF: unqlite_util_random_string()]
  * Please refer to the official documentation for function purpose and expected parameters.
@@ -2806,4 +2807,3 @@ UNQLITE_APIEXPORT unsigned int unqlite_util_random_num(unqlite *pDb)
 #endif
 	 return iNum;
 }
-#endif

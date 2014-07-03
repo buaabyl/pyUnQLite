@@ -14,6 +14,7 @@
 #ifndef UNQLITE_AMALGAMATION
 #include "unqliteInt.h"
 #endif
+#include "stdio.h"
 /* Omit the whole layer from the build if compiling for platforms other than Windows */
 #ifdef __WINNT__
 /* This file contains code that is specific to windows. (Mostly SQLite3 source tree) */
@@ -914,6 +915,9 @@ static int winOpen(
   pFile->pVfs = pVfs;
   pFile->sectorSize = getSectorSize(pVfs, zUtf8Name);
   HeapFree(GetProcessHeap(),0,zConverted);
+
+  printf("winOpen: id = %p, name = %s\n", id, zName);
+
   return UNQLITE_OK;
 }
 /*

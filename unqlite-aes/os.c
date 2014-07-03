@@ -14,6 +14,7 @@
 #ifndef UNQLITE_AMALGAMATION
 #include "unqliteInt.h"
 #endif
+#include "stdio.h"
 /* OS interfaces abstraction layers: Mostly SQLite3 source tree */
 /*
 ** The following routines are convenience wrappers around methods
@@ -23,10 +24,14 @@
 */
 UNQLITE_PRIVATE int unqliteOsRead(unqlite_file *id, void *pBuf, unqlite_int64 amt, unqlite_int64 offset)
 {
+  printf("unqliteOsRead: id = %p, size = %4d, offset = 0x%08x\n",
+          id, amt, offset);
   return id->pMethods->xRead(id, pBuf, amt, offset);
 }
 UNQLITE_PRIVATE int unqliteOsWrite(unqlite_file *id, const void *pBuf, unqlite_int64 amt, unqlite_int64 offset)
 {
+  printf("unqliteOsWrite: id = %p, size = %4d, offset = 0x%08x\n",
+          id, amt, offset);
   return id->pMethods->xWrite(id, pBuf, amt, offset);
 }
 UNQLITE_PRIVATE int unqliteOsTruncate(unqlite_file *id, unqlite_int64 size)

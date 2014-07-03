@@ -1,6 +1,10 @@
 pyUnQLite
 =========
 
+TODO
+-------
+* Add AES-256 support to unqlite.
+
 TIPS
 -------
 If you don't like amalgamation style, I wrote a script to extract source code from unqlite.c: https://github.com/buaabyl/pyUnQLite/tree/master/unpack-unqlite

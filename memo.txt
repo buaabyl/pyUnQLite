@@ -1,0 +1,52 @@
+= UnQLite interfaces =
+
+== VFS ==
+unqlite
+-> pager.c
+-> os.c
+-> os_win.c
+
+function unqliteCoreInitialize (api.c) call unqliteExportBuiltinVfs (os_win.c)
+to get the struct unqlite_vfs which contain "open, delete, etc" function pointers.
+And the register it to unqlite handle.
+
+when unqlite opened a container, winOpen (os_win.c) register 
+it's io-interface (read, write, truncate, sync, etc) to handle.
+
+unqlite just call unqliteOsRead (os.c) which is VFS interface,
+it call system io-interface.
+
+let's take a look at code.
+
+unqlite_kv_fetch (api.c) call unqlitePagerGetKvEngine (pager.c) get unqlite_kv_engine.
+engine have unqlite_kv_io, and unqlite_kv_methods inside it.
+
+unqlite_kv_fetch (api.c) have unqlite_kv_methods which implement
+Key/Value Storage Engine Virtual Method Table, so it did not
+need to know file interface.
+
+and I found unqliteCoreInitialize (api.c) call 
+unqliteExportMemKvStorage (mem_kv.c) to fill unqlite_kv_methods.
+or unqliteExportDiskKvStorage (lhash_kv.c).
+
+unqlite_kv_fetch (api.c) call function pointer xSeek which actual function is
+lhCursorSeek (lhash_kv.c), and this function call lhRecordLookup (lhash_kv.c)
+to check if a key exist. lhRecordLookup call pager function pointer xGet,
+which is unqliteKvIoPageGet (pager.c), call pager_get_page_contents (pager.c).
+pager_get_page_contents call unqliteOsRead to perform VFS read.
+
+unqlite_kv_fetch (api.c)
+-> lhCursorSeek (lhash_kv.c)
+-> lhRecordLookup (lhash_kv.c)
+-> unqliteKvIoPageGet (pager.c)
+-> pager_get_page_contents (pager.c)
+-> unqliteOsRead (os.c)
+-> winRead (os_win.c)
+-> ReadFile (windows api)
+
+== How to add crypto ==
+If not modify unqlite, just encrypt 'key' and 'value' then save to unqlite,
+but this is not a good idea.
+
+Second method is implement os.c to add a crypto file system.
+

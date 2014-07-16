@@ -5,15 +5,19 @@ TODO
 -------
 * Add AES-256 support to unqlite.
 
-TIPS
--------
-If you don't like amalgamation style, I wrote a script to extract source code from unqlite.c: https://github.com/buaabyl/pyUnQLite/tree/master/unpack-unqlite
+ATTENTION
+---------
+This AES-256 version is not the OFFICIAL product which can be obtained from http://unqlite.org/support.html
+If you really need encryption unqlite in production, maybe official version is better.
+
 
 Introduction
 -------
 A UnQLite NoSQL DB for python. Using cython for adapter.
 
 An this is unofficial python bindings for [UnQLite](http://unqlite.org/), an embeddable NoSQL database engine.
+
+If you don't like amalgamation style, I wrote a script to extract source code from unqlite.c: https://github.com/buaabyl/pyUnQLite/tree/master/unpack-unqlite
 
 I don't like official python bindings, so decided to use new way.
 
